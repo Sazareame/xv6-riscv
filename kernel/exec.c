@@ -87,6 +87,7 @@ exec(char *path, char **argv)
   sp = sz;
   stackbase = sp - USERSTACK*PGSIZE;
 
+  // @Sazareame: argv[].
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
     if(argc >= MAXARG)
@@ -99,8 +100,9 @@ exec(char *path, char **argv)
       goto bad;
     ustack[argc] = sp;
   }
-  ustack[argc] = 0;
+  ustack[argc] = 0; // @Sazareame: The terminate 0 of argv.
 
+  // @Sazareame: argv, e.g. address of argv array.
   // push the array of argv[] pointers.
   sp -= (argc+1) * sizeof(uint64);
   sp -= sp % 16;
@@ -120,6 +122,8 @@ exec(char *path, char **argv)
       last = s+1;
   safestrcpy(p->name, last, sizeof(p->name));
     
+  // @Sazareame: Clean the old pagetable. Initialize the process info and 
+  // trapframe for ret.
   // Commit to the user image.
   oldpagetable = p->pagetable;
   p->pagetable = pagetable;

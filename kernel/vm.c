@@ -158,6 +158,10 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
   a = va;
   last = va + size - PGSIZE;
   for(;;){
+    // Sazareame
+    // At this time, the location, which  entry in pagetable points to, may not
+    // been allocated yet, so the argument alloc is set to 1 for allocating new
+    // memory if necessary.
     if((pte = walk(pagetable, a, 1)) == 0)
       return -1;
     if(*pte & PTE_V)
@@ -290,6 +294,8 @@ freewalk(pagetable_t pagetable)
       panic("freewalk: leaf");
     }
   }
+  // Sazareame
+  // Free the page which stores root pagetable itself.
   kfree((void*)pagetable);
 }
 
@@ -370,7 +376,11 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
        (*pte & PTE_W) == 0)
       return -1;
     pa0 = PTE2PA(*pte);
+    // Sazareame
+    // If the len is greater than the page size...
     n = PGSIZE - (dstva - va0);
+    // Sazareame
+    // Otherwise...
     if(n > len)
       n = len;
     memmove((void *)(pa0 + (dstva - va0)), src, n);

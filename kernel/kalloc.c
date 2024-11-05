@@ -27,6 +27,12 @@ void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
+  /* Sazareame
+    The argument end is provided by ld script, stands for the beginning address
+    after the kernel space.
+    freerange(end, (void*)PHYSTOP) frees all the memory by pages from end to 
+    PUYSTOP (aka 0x88000000)
+  */
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -34,6 +40,10 @@ void
 freerange(void *pa_start, void *pa_end)
 {
   char *p;
+  /* Sazareame
+   Free the memory in range of address that is the multiple of PGSIZE (4090)
+   and great equal than given [pa_start, pa_end].
+  */
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
     kfree(p);
@@ -48,9 +58,18 @@ kfree(void *pa)
 {
   struct run *r;
 
+  // Sazareame
+  /*
+    Check: 1) pa is not aligned; 2) pa is lower than the end of kernel
+           3) pa is higher that the end physical address. 
+  */
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
+  /* Sazareame
+    To make the access of dangling pointer result in junk value in order to 
+    make the code crash faster. 
+  */
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
 

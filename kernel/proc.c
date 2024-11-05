@@ -189,6 +189,11 @@ proc_pagetable(struct proc *p)
   // to/from user space, so not PTE_U.
   if(mappages(pagetable, TRAMPOLINE, PGSIZE,
               (uint64)trampoline, PTE_R | PTE_X) < 0){
+    // Sazareame
+    // The second argument is zero for just free all the PTE without unmap them.
+    // At this time, except the trampoline, all of the PTE has PTE_V == 0.
+    // So inside the uvmfree, when calling walkfree, only the root page wiil
+    // be called kfree on. The lower leval pagetables are not allocated.
     uvmfree(pagetable, 0);
     return 0;
   }
@@ -263,6 +268,10 @@ growproc(int n)
   struct proc *p = myproc();
 
   sz = p->sz;
+  /* Sazareame
+    If the new size does not cross the 4096B boundary, no actual page
+    allocation will be done. Only the size has been changed.
+  */
   if(n > 0){
     if((sz = uvmalloc(p->pagetable, sz, sz + n, PTE_W)) == 0) {
       return -1;
